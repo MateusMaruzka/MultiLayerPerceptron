@@ -187,6 +187,8 @@ class NeuralNetwork:
         dW = [np.zeros(w.shape) for w in self.w]
         
         g = act[-1] - y
+        e = np.sum((g)**2)
+        
         assert g.shape == act[-1].shape
         
         for l in range(1, self.num_layers):
@@ -197,19 +199,30 @@ class NeuralNetwork:
             
             try:
                
-                aux = [ i*act[-l-1] for i in g]
+                #print("g", len(g))
+                #print("act", len(act[-l-1]))
+                aux = [i*act[-l-1] for i in g]
                 dW[-l] = aux
             
             except ValueError:
-                print("mds n guento mais")
+               # print("mds n guento mais")
                 dW[-l] = g * act[-l-1].T
+                
+            except TypeError:
+                print("TyperError")
+#                print("g", g)
+#                print(act[-l-1])
+#                print("len(g)", len(g))
+#                print("act", len(act[-l-1]))
+#                print("shape act", act[-l-1].shape)
+                
                 
             dB[-l] = g
 
             g = np.dot(self.w[-l].T, g)
             
             
-        return dW,dB
+        return dW,dB,e
         
         
         
@@ -272,36 +285,51 @@ class NeuralNetwork:
 if __name__ == "__main__":
     
     np.random.seed(0)
-    nn = NeuralNetwork([3,2,3], 0.01)
+    nn = NeuralNetwork([784,100,1], 0.3)
     
 #    
-#    dataset = ([[0,0],
-#                        [0,1],
-#                        [1,0],
-#                        [1,1]])
+    dataset = np.array([[0,0],
+                        [0,1],
+                        [1,0],
+                        [1,1]])
+    
+    dataset2 = np.array([[0],
+                         [1],
+                         [1],
+                         [1]])
 #    
-#    dataset2 = ([
-#                         [0],
-#                         [1],
-#                         [1],
-#                         [1]])
-#    
+            
+    from mnist import MNIST
+
+    mnist = MNIST()
+    mnist.gz = True
+
+    x_train, y = mnist.load_training() #60000 samples
 #
     #nn.trainModel(np.array([0.05, 0.1]), np.array([0.01, 2, 1]), 10000)
-    
-    for i in range(20000):
-       # dw,db= nn.backprop(np.array([0.3, 1.1, 1, 2, 3]), np.array([0.1, 0.8, 0.4, 0.1,0.1,0.1, 0.3]))
-        dw,db= nn.backprop(np.arange(1,4), np.array([0.1, 0.8, 0.4]))
 
+    error = []
+    for i in range(1000):
+
+        idx = np.random.randint(0,len(dataset))
+        dw,db, e= nn.backprop(np.arange(1,785), np.array([0.7]))
+        #dw,db, e= nn.backprop(dataset[idx], dataset2[idx])
+        error.append(e)
         dw = dw[0]        
         
-        print("cu",nn.w[0], sep = "\n" )
-        print(dw, sep = "\n")
+        #print("cu",nn.w[0], sep = "\n" )
+        #print(dw, sep = "\n")
         
         nn.w[0] = nn.w[0] - nn.learning_rate*np.array(dw)
         nn.b = nn.b - nn.learning_rate*np.array(db)
         
-    print("predição:", nn.predict(np.arange(1,4)))
+    
+    print("Predição", nn.predict(np.arange(1,785)))
+        
+#    for p in dataset:
+#        print("predição:", nn.predict(p))
+    
+    plt.semilogx(error)
 #    #print("Vai toma no cu:", nn.feedfoward([0.05, 0.1]))
 #
 #    b,w= nn.backpropagation(np.array([0.05, 0.1]), np.array([0.01, 0.99, 1]))
