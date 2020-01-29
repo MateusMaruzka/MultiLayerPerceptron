@@ -14,9 +14,7 @@ class NeuralNetwork:
         
         self.layers = layers
         self.num_layers = len(layers)
-        
-#        self.b = np.array([np.random.randint(1,3,[i,1]) for i in layers[1:]])
-#        self.w = np.array([np.random.randint(1,9,[j,i]) for i,j in zip(layers[:-1], layers[1:])])   
+          
         
         self.b = np.array([np.random.randn(i,1) for i in layers[1:]])
         self.w = np.array([np.random.randn(j,i) for i,j in zip(layers[:-1], layers[1:])])
@@ -30,28 +28,10 @@ class NeuralNetwork:
 #        for j in range(len(self.b)):
 #            self.b[j] = doceu[j]
 #            
-#              
-#        print("Bias")
-#        for i in self.b:
-#            print(i)
-#            
-#        print("Weights")
-#        for i in self.w:
-#            print(i)
-#        self.b = np.array([ np.array([0.35, 0.35]), np.array([0.6, 0.6])])
-#        self.w = [np.array([[0.15, 0.2],[0.25, 0.3]]), np.array([[0.4, 0.45],[0.5, 0.55]])]
-#        
+
         self.learning_rate = learning_rate
         
-        # TODO: Criar uma maneira para que o usuario possa fornecer uma função de ativação de sua escolha
-        """
-        
-        if activation_function == None:
-            self.activation_function = self.sigmoid
-        else:
-            self.activation_function = self.sigmoid
-        
-        """
+
         
     def loadModel():
         # TODO 
@@ -76,15 +56,24 @@ class NeuralNetwork:
          
          
             print("atualizando pesos")
-            print(self.w)
-            print(w)
-            for i in range(1,self.num_layers):
+
+            for i in range(self.num_layers-1):
 #                print("selfb", self.b[-i])
                 print("Layers ", i)
                 #print("b", b[-i])
+                                
+                if(len(self.predict([0.1, 0.1])) != self.layers[-1]):
+                    raise Exception("ante")
+
+                print("Derivs parciais")
+                for b in w:
+                    print(b)
+                print("-----")
                 
-                print("w", w[-i])
-                self.w[-i] = self.w[-i] - self.learning_rate*(w[-i])
+                
+                print(self.w)
+                print(w[i])
+                self.w[i] = self.w[i] - self.learning_rate*(w[i])
                 #self.b[-i] = self.b[-i] - self.learning_rate*(b[-i])
                 
                 
@@ -93,7 +82,8 @@ class NeuralNetwork:
                 for x in self.w:
                     print(x)
                 
-                assert (len(self.predict([0.1, 0.1])) == self.layers[-1])
+                if (len(self.predict([0.1, 0.1])) != self.layers[-1]):
+                    raise Exception("Depois")
 
 
         
@@ -119,6 +109,7 @@ class NeuralNetwork:
             
         """
         activations, zs = self.feedfoward(x)
+        assert len(activations[-1]) == self.layers[-1]
         
         print(activations)
         print(zs)
@@ -130,54 +121,93 @@ class NeuralNetwork:
         print("\nInit Backpropagation\n")
         
         print("Camada de saída\n")
-        #print(activations[-1].reshape(-1,1) - y.reshape(-1,1)) 
-        # Pode-se fazer reshape(-1,1) apenas no resultado da derivada
+       
         
-        delta = ((activations[-1]-y)*(self.dsigmoid(zs[-1])))
+        dCdA = activations[-1] - y
+        assert activations[-1].shape == y.shape and dCdA.shape == activations[-1].shape
         
-#        print("delta")
-#        print(delta)
-#        print("act")
-#        print(activations[-2])
+        delta = dCdA * self.dsigmoid(zs[-1])
+        assert len(delta) == self.layers[-1] and delta.shape == dCdA.shape
         
-        delta_b[-1] = delta
-        delta_w[-1] = (delta * activations[-2]).reshape(-1,1)
+    
+
+        print(delta)
+        print(activations[-2])
         
-#        delta_w[-1] = activations[-2] * delta
+        teste = []
+        for i in activations[-2].reshape(-1,1):
+            teste.append([i*delta])
+            
+#        print("Teste")
+#        print(*teste, sep='\n')
         
-#        print("delta_w\n",0.5*delta_w[-1])
-#        
-#        print("Corrigindo:\n",self.w[-1])
-#        print("")
+        
+#        for i,j in zip(np.transpose(teste), self.w[-1]):
+#            print("w",j-i[0])
+#        print("Pesos")
+      
+        #delta_w[-1] = np.dot(delta, np.transpose(activations[-2]))
+
+        # Note that the variable l in the loop below is used a little
+        # differently to the notation in Chapter 2 of the book.  Here,
+        # l = 1 means the last layer of neurons, l = 2 is the
+        # second-last layer, and so on.  It's a renumbering of the
+        # scheme in the book, used here to take advantage of the fact
+        # that Python can use negative indices in lists.
+        for l in range(2, self.num_layers):
+            z = zs[-l]
+            sp = self.dsigmoid(z)
+            delta = np.dot(self.w[-l+1].T, delta) * sp
+            delta_b[-l] = delta
+            delta_w[-l] = np.dot(delta, np.transpose(activations[-l-1]))
+            
+        return (delta_b, delta_w)
+
+        
+        
+        
+        
 
         print("\nCamandas ocultas\n")
         
-        for l in range(2, self.num_layers):
+        #for l in range(2, self.num_layers):
             
-            #print("Delta")
-            a = np.dot(self.w[-l+1].T, delta)
-            b = self.dsigmoid(zs[-l])
-            #print(a)
-            #print(b)
-            
-            delta = a * b
-#            print("delta\n",delta)
-#        
-#            print(" ")
-            #print("act\n",np.reshape(activations[-l-1], (-1,1)))
-
-            delta_b[-l] = delta
-            delta_w[-l] = delta * np.reshape(activations[-l-1], (-1,1))
-
-            #print("delta_w\n",delta_w[-l])
-        
-        #print("\nFIM Backpropagation\n")
-
-        #print(self.w[-2] - 0.5*delta_w[-2])
-        
-#        print("delta_w")
-#        print(delta_w)
+          
         return (delta_b,delta_w)
+        
+    
+    
+    
+    def backprop(self, x, y):
+        
+        
+        act, z = self.feedfoward(x)
+        
+        dB = [np.zeros(b.shape) for b in self.b]
+        dW = [np.zeros(w.shape) for w in self.w]
+        
+        g = act[-1] - y
+        assert g.shape == act[-1].shape
+        
+        for l in range(1, self.num_layers):
+            
+            g = g * self.dsigmoid(z[-l])
+            print("g", g)
+            
+            
+            try:
+                dW[-l] = np.dot(g, act[-l-1].T)
+            except ValueError:
+                dW[-l] = g * act[-l-1].T
+                
+            dB[-l] = g
+            print("dw", dW[-l])
+
+            g = np.dot(self.w[-l].T, g)
+            
+            
+        return dW,dB
+        
         
         
     def feedfoward(self, x):
@@ -196,7 +226,7 @@ class NeuralNetwork:
             activation = self.sigmoid(z)
             activations.append(activation)
 
-        return activations, zs
+        return np.array(activations),np.array(zs)
     
     def predict(self, x):
         
@@ -216,29 +246,16 @@ class NeuralNetwork:
         
 #        print("Predição")
         for b, w in zip(self.b, self.w):
-
-#            print("w\n", w)
-#            print("")
-#            print("b\n", b)
-#            print("x\n", x)
-#            print("")
-#            print("npdot", np.dot(w, x))
-#            print("")
-#            print("z", np.dot(w,x)+ b.T[0]) 
-        
+       
             x = self.sigmoid(np.dot(w, x) + b.T[0])
-            #x = self.sigmoid(np.sum(np.dot(w, x), b))
-#            print("\n\n")
-            
+
         
         return x
 #
     
     @staticmethod
     def sigmoid(x):
-        
-        # return np.heaviside(x, 1)
-        
+                
         return 1.0 / (1.0 + np.exp(-x));
 
     @staticmethod
@@ -251,7 +268,7 @@ class NeuralNetwork:
 
 if __name__ == "__main__":
     
-    nn = NeuralNetwork([2,2,1], 0.24)
+    nn = NeuralNetwork([2,1], 0.2)
     
 #    
 #    dataset = ([[0,0],
@@ -266,11 +283,20 @@ if __name__ == "__main__":
 #                         [1]])
 #    
 #
-    nn.trainModel(np.array([0.05, 0.1]), np.array([0.99]), 10)
-    print("predição:", nn.predict([0.05,0.1]))
-    #print("Vai toma no cu:", nn.feedfoward([0.05, 0.1]))
-
-#    b,w= nn.backpropagation(np.array([0.05, 0.1]), np.array([0.01, 0.99]))
+    #nn.trainModel(np.array([0.05, 0.1]), np.array([0.01, 2, 1]), 10000)
+    
+    for i in range(1000):
+        dw,db= nn.backprop(np.array([0.3, 1.1]), np.array([0.5]))
+        
+        print("cu",nn.w[0][0])
+        print("doce",dw)
+        nn.w[0][0] = nn.w[0][0] - 0.01*np.array(dw)
+        nn.b = nn.b - 0.2*np.array(db)
+        
+    print("predição:", nn.predict([0.3,1.1]))
+#    #print("Vai toma no cu:", nn.feedfoward([0.05, 0.1]))
+#
+#    b,w= nn.backpropagation(np.array([0.05, 0.1]), np.array([0.01, 0.99, 1]))
 ##    
 #    print(nn.w[-1] - 0.5*np.array(w[-1]))
 #    a,b = nn.feedfoward([0.05, 0.1])
