@@ -192,7 +192,8 @@ class NeuralNetwork:
         for l in range(1, self.num_layers):
             
             g = g * self.dsigmoid(z[-l])
-            assert g.shape == act[-1].shape            
+            #breakpoint()
+            #assert g.shape == act[-l].shape            
             
             try:
                
@@ -271,7 +272,7 @@ class NeuralNetwork:
 if __name__ == "__main__":
     
     np.random.seed(0)
-    nn = NeuralNetwork([10,7], 0.01)
+    nn = NeuralNetwork([3,2,3], 0.01)
     
 #    
 #    dataset = ([[0,0],
@@ -288,9 +289,9 @@ if __name__ == "__main__":
 #
     #nn.trainModel(np.array([0.05, 0.1]), np.array([0.01, 2, 1]), 10000)
     
-    for i in range(10000):
+    for i in range(20000):
        # dw,db= nn.backprop(np.array([0.3, 1.1, 1, 2, 3]), np.array([0.1, 0.8, 0.4, 0.1,0.1,0.1, 0.3]))
-        dw,db= nn.backprop(np.arange(1,11), np.array([0.1, 0.8, 0.4, 0.1,0.1,0.1, 0.3]))
+        dw,db= nn.backprop(np.arange(1,4), np.array([0.1, 0.8, 0.4]))
 
         dw = dw[0]        
         
@@ -300,7 +301,7 @@ if __name__ == "__main__":
         nn.w[0] = nn.w[0] - nn.learning_rate*np.array(dw)
         nn.b = nn.b - nn.learning_rate*np.array(db)
         
-    print("predição:", nn.predict(np.arange(1,11)))
+    print("predição:", nn.predict(np.arange(1,4)))
 #    #print("Vai toma no cu:", nn.feedfoward([0.05, 0.1]))
 #
 #    b,w= nn.backpropagation(np.array([0.05, 0.1]), np.array([0.01, 0.99, 1]))
