@@ -192,16 +192,18 @@ class NeuralNetwork:
         for l in range(1, self.num_layers):
             
             g = g * self.dsigmoid(z[-l])
-            print("g", g)
-            
+            assert g.shape == act[-1].shape            
             
             try:
-                dW[-l] = np.dot(g, act[-l-1].T)
+               
+                aux = [ i*act[-l-1] for i in g]
+                dW[-l] = aux
+            
             except ValueError:
+                print("mds n guento mais")
                 dW[-l] = g * act[-l-1].T
                 
             dB[-l] = g
-            print("dw", dW[-l])
 
             g = np.dot(self.w[-l].T, g)
             
@@ -219,7 +221,7 @@ class NeuralNetwork:
         zs = [] # list to store all the z vectors, layer by layer
     
         for b, w in zip(self.b, self.w):
-
+            
             z = np.dot(w, activation) + b.T[0]
             zs.append(z)
             
@@ -268,7 +270,8 @@ class NeuralNetwork:
 
 if __name__ == "__main__":
     
-    nn = NeuralNetwork([2,1], 0.2)
+    np.random.seed(0)
+    nn = NeuralNetwork([10,7], 0.01)
     
 #    
 #    dataset = ([[0,0],
@@ -285,15 +288,19 @@ if __name__ == "__main__":
 #
     #nn.trainModel(np.array([0.05, 0.1]), np.array([0.01, 2, 1]), 10000)
     
-    for i in range(1000):
-        dw,db= nn.backprop(np.array([0.3, 1.1]), np.array([0.5]))
+    for i in range(10000):
+       # dw,db= nn.backprop(np.array([0.3, 1.1, 1, 2, 3]), np.array([0.1, 0.8, 0.4, 0.1,0.1,0.1, 0.3]))
+        dw,db= nn.backprop(np.arange(1,11), np.array([0.1, 0.8, 0.4, 0.1,0.1,0.1, 0.3]))
+
+        dw = dw[0]        
         
-        print("cu",nn.w[0][0])
-        print("doce",dw)
-        nn.w[0][0] = nn.w[0][0] - 0.01*np.array(dw)
-        nn.b = nn.b - 0.2*np.array(db)
+        print("cu",nn.w[0], sep = "\n" )
+        print(dw, sep = "\n")
         
-    print("predição:", nn.predict([0.3,1.1]))
+        nn.w[0] = nn.w[0] - nn.learning_rate*np.array(dw)
+        nn.b = nn.b - nn.learning_rate*np.array(db)
+        
+    print("predição:", nn.predict(np.arange(1,11)))
 #    #print("Vai toma no cu:", nn.feedfoward([0.05, 0.1]))
 #
 #    b,w= nn.backpropagation(np.array([0.05, 0.1]), np.array([0.01, 0.99, 1]))
