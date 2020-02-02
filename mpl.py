@@ -8,9 +8,33 @@ Created on Thu Jan 16 17:37:42 2020
 import numpy as np
 import matplotlib.pyplot as plt
 
+class CrossEntropyCost(object):
+
+        @staticmethod
+        def fn(a, y):
+            """Return the cost associated with an output ``a`` and desired output
+            ``y``.  Note that np.nan_to_num is used to ensure numerical
+            stability.  In particular, if both ``a`` and ``y`` have a 1.0
+            in the same slot, then the expression (1-y)*np.log(1-a)
+            returns nan.  The np.nan_to_num ensures that that is converted
+            to the correct value (0.0).
+            """
+            return np.sum(np.nan_to_num(-y*np.log(a)-(1-y)*np.log(1-a)))
+    
+        @staticmethod
+        def delta(z, a, y):
+            """Return the error delta from the output layer.  Note that the
+            parameter ``z`` is not used by the method.  It is included in
+            the method's parameters in order to make the interface
+            consistent with the delta method for other cost classes.
+            """
+            return (a-y)
+
+
 class NeuralNetwork:
     
-    def __init__(self, layers, learning_rate, activation_function = None):
+    
+    def __init__(self, layers, learning_rate, cost_function = CrossEntropyCost):
         
         self.layers = layers
         self.num_layers = len(layers)
@@ -19,6 +43,8 @@ class NeuralNetwork:
         self.b = np.array([np.random.randn(i,1) for i in layers[1:]])
         self.w = np.array([np.random.randn(j,i) for i,j in zip(layers[:-1], layers[1:])])
     
+    
+        self.cost = cost_function
 #        mamae = [np.array([[0.15, 0.2],[0.25, 0.3]]), np.array([[0.4, 0.45],[0.5, 0.55]])]
 #        doceu = [ np.array([[0.35],[0.35]]), np.array([[0.6],[ 0.6]])]
 #
@@ -30,7 +56,6 @@ class NeuralNetwork:
 #            
 
         self.learning_rate = learning_rate
-        
 
         
     def loadModel():
@@ -40,167 +65,30 @@ class NeuralNetwork:
     def saveModel():
         # utilziar cpickle? 
         return 1
-        
-    def trainModel(self, training_data, desired_response, epochs):
-        
-        j = 0
-        
-        while j < epochs:
-            print("epoch: ",j+1)
-            #idx = np.random.randint(len(training_data))
-            
-            #print(training_data[idx], desired_response[idx])
-            
-            b,w = self.backpropagation(training_data, desired_response)
-            
-         
-         
-            print("atualizando pesos")
-
-            for i in range(self.num_layers-1):
-#                print("selfb", self.b[-i])
-                print("Layers ", i)
-                #print("b", b[-i])
-                                
-                if(len(self.predict([0.1, 0.1])) != self.layers[-1]):
-                    raise Exception("ante")
-
-                print("Derivs parciais")
-                for b in w:
-                    print(b)
-                print("-----")
-                
-                
-                print(self.w)
-                print(w[i])
-                self.w[i] = self.w[i] - self.learning_rate*(w[i])
-                #self.b[-i] = self.b[-i] - self.learning_rate*(b[-i])
-                
-                
-                
-                print("Pesos")
-                for x in self.w:
-                    print(x)
-                
-                if (len(self.predict([0.1, 0.1])) != self.layers[-1]):
-                    raise Exception("Depois")
-
-
-        
-            
-            
-  
-            j+=1
-        
-                    
-
-
-        #plt.plot((error)
-
-
-    
-    def backpropagation(self, x, y):
-        """
-        Referências: 
-            https://sudeepraja.github.io/Neural/
-            http://neuralnetworksanddeeplearning.com/chap2.html
-            
-            Para atualizar W é preciso transformar delta_w em um vetor coluna
-            
-        """
-        activations, zs = self.feedfoward(x)
-        assert len(activations[-1]) == self.layers[-1]
-        
-        print(activations)
-        print(zs)
-        # cria um vetor que recebera cada delta_b e delta_w associado ao peso e vies correspondente
-        
-        delta_b = [np.zeros(b.shape) for b in self.b]
-        delta_w = [np.zeros(w.shape) for w in self.w]
-        
-        print("\nInit Backpropagation\n")
-        
-        print("Camada de saída\n")
-       
-        
-        dCdA = activations[-1] - y
-        assert activations[-1].shape == y.shape and dCdA.shape == activations[-1].shape
-        
-        delta = dCdA * self.dsigmoid(zs[-1])
-        assert len(delta) == self.layers[-1] and delta.shape == dCdA.shape
-        
-    
-
-        print(delta)
-        print(activations[-2])
-        
-        teste = []
-        for i in activations[-2].reshape(-1,1):
-            teste.append([i*delta])
-            
-#        print("Teste")
-#        print(*teste, sep='\n')
-        
-        
-#        for i,j in zip(np.transpose(teste), self.w[-1]):
-#            print("w",j-i[0])
-#        print("Pesos")
-      
-        #delta_w[-1] = np.dot(delta, np.transpose(activations[-2]))
-
-        # Note that the variable l in the loop below is used a little
-        # differently to the notation in Chapter 2 of the book.  Here,
-        # l = 1 means the last layer of neurons, l = 2 is the
-        # second-last layer, and so on.  It's a renumbering of the
-        # scheme in the book, used here to take advantage of the fact
-        # that Python can use negative indices in lists.
-        for l in range(2, self.num_layers):
-            z = zs[-l]
-            sp = self.dsigmoid(z)
-            delta = np.dot(self.w[-l+1].T, delta) * sp
-            delta_b[-l] = delta
-            delta_w[-l] = np.dot(delta, np.transpose(activations[-l-1]))
-            
-        return (delta_b, delta_w)
-
-        
-        
-        
-        
-
-        print("\nCamandas ocultas\n")
-        
-        #for l in range(2, self.num_layers):
-            
-          
-        return (delta_b,delta_w)
-        
-    
-    
     
     def backprop(self, x, y):
         
-        
+  
         act, z = self.feedfoward(x)
         
         dB = [np.zeros(b.shape) for b in self.b]
         dW = [np.zeros(w.shape) for w in self.w]
         
         g = act[-1] - y
-        e = np.sum((g)**2)
+        
+        e = np.sum((y-act[-1])**2)
         
         assert g.shape == act[-1].shape
         
         for l in range(1, self.num_layers):
+            #g = g
             
+#            if l > 1:
             g = g * self.dsigmoid(z[-l])
-            #breakpoint()
-            #assert g.shape == act[-l].shape            
             
+                
             try:
-               
-                #print("g", len(g))
-                #print("act", len(act[-l-1]))
+    
                 aux = [i*act[-l-1] for i in g]
                 dW[-l] = aux
             
@@ -210,19 +98,15 @@ class NeuralNetwork:
                 
             except TypeError:
                 print("TyperError")
-#                print("g", g)
-#                print(act[-l-1])
-#                print("len(g)", len(g))
-#                print("act", len(act[-l-1]))
-#                print("shape act", act[-l-1].shape)
-                
+
                 
             dB[-l] = g
 
             g = np.dot(self.w[-l].T, g)
             
             
-        return dW,dB,e
+        return [dW,dB,e]
+        #return (np.array([1,1]), np.array([2,2]), 9)
         
         
         
@@ -269,6 +153,96 @@ class NeuralNetwork:
         return x
 #
     
+    
+    
+    @staticmethod
+    def mini_batch2(x, y, dataset_lenght, mini_batch_lenght):
+    
+        #idx = np.random.randint(0,dataset_lenght-mini_batch_lenght)
+        idx = np.random.randint(0, dataset_lenght, mini_batch_lenght, dtype = 'I')
+
+        return (x[idx],y[idx])
+
+
+    
+    
+    @staticmethod
+    def mini_batch(x, y, dataset_lenght, mini_batch_lenght, idx):
+    
+        #idx = np.random.randint(0,dataset_lenght-mini_batch_lenght)
+        #idx = np.random.randint(0, dataset_lenght, mini_batch_lenght, dtype = 'I')
+
+        return (x[idx:idx+mini_batch_lenght],y[idx:idx+mini_batch_lenght])
+
+
+    def stochastic_gradient_descent(self, x, y):
+    
+    
+        db = np.array([np.zeros(b.shape) for b in self.b])
+        dw = np.array([np.zeros(w.shape) for w in self.w])
+        err = []    
+        
+        for i,j in zip(x,y):
+            
+            w,b,e = self.backprop(i,j)
+            db += b
+            dw += w
+            err.append(e)
+        
+        db = db / len(x)
+        dw = dw / len(x)
+        
+        err = np.sum(err)/len(x)
+        
+       # print("er", err)
+        
+        return dw,db,err
+    
+    
+    
+    def trainModel(self, training_data, desired_response, epochs, mini_batch_size = 60000):
+        
+        j = 0
+        error = []
+        
+        while j < epochs:
+            print("epoch: ",j+1)
+            
+#            x,y = self.mini_batch2(training_data, desired_response, dataset_lenght=len(training_data), mini_batch_lenght=mini_batch_size)
+           
+            # ruim em termos de mem
+            mini_batches = [
+                    self.mini_batch(training_data, desired_response, dataset_lenght=len(training_data), mini_batch_lenght=mini_batch_size, idx=idx) 
+                    for idx in range(0, len(training_data), mini_batch_size)]
+            for mini_batch in mini_batches:
+            #for i in range(0, len(training_data), mini_batch_size):
+                
+#                dw,db,e = self.stochastic_gradient_descent(training_data[i:i+mini_batch_size], desired_response[i:i+mini_batch_size])
+                dw,db,e = self.stochastic_gradient_descent(mini_batch[0], mini_batch[1])
+#            dw,db,e = self.stochastic_gradient_descent(x, y)
+
+                error.append(e)
+            
+                dw = dw[0]        
+            
+                # Atualiza os pesos e bias utilizando os gradiente
+                self.w[0] = self.w[0] - self.learning_rate*np.array(dw)
+                self.b = self.b - self.learning_rate*np.array(db)
+            
+            j+=1
+            
+        return error
+    
+    
+    def evaluate(self, x_test, y_test):
+        
+        results = [(np.argmax(self.predict(x)), np.argmax(y))
+                       for (x, y) in zip(x_test, y_test)]
+
+        return sum(int(x == y) for (x, y) in results)
+        
+        
+    
     @staticmethod
     def sigmoid(x):
                 
@@ -285,59 +259,30 @@ class NeuralNetwork:
 if __name__ == "__main__":
     
     np.random.seed(0)
-    nn = NeuralNetwork([784,100,1], 0.3)
+    nn = NeuralNetwork([2,4,1], 0.5)
     
 #    
-    dataset = np.array([[0,0],
+    dataset = np.array([[1,0],
                         [0,1],
-                        [1,0],
+                        [0,0],
                         [1,1]])
     
     dataset2 = np.array([[0],
                          [1],
-                         [1],
+                         [0],
                          [1]])
-#    
             
-    from mnist import MNIST
 
-    mnist = MNIST()
-    mnist.gz = True
+    plt.plot(nn.trainModel(dataset, dataset2, epochs=5000, mini_batch_size = 2))
+    
+    plt.legend(["1","2","4"])
 
-    x_train, y = mnist.load_training() #60000 samples
-#
-    #nn.trainModel(np.array([0.05, 0.1]), np.array([0.01, 2, 1]), 10000)
+    for i,j in zip(dataset, dataset2):
+        print("Predicao: ", nn.predict(i))
+      
 
-    error = []
-    for i in range(1000):
-
-        idx = np.random.randint(0,len(dataset))
-        dw,db, e= nn.backprop(np.arange(1,785), np.array([0.7]))
-        #dw,db, e= nn.backprop(dataset[idx], dataset2[idx])
-        error.append(e)
-        dw = dw[0]        
-        
-        #print("cu",nn.w[0], sep = "\n" )
-        #print(dw, sep = "\n")
-        
-        nn.w[0] = nn.w[0] - nn.learning_rate*np.array(dw)
-        nn.b = nn.b - nn.learning_rate*np.array(db)
         
     
-    print("Predição", nn.predict(np.arange(1,785)))
-        
-#    for p in dataset:
-#        print("predição:", nn.predict(p))
     
-    plt.semilogx(error)
-#    #print("Vai toma no cu:", nn.feedfoward([0.05, 0.1]))
-#
-#    b,w= nn.backpropagation(np.array([0.05, 0.1]), np.array([0.01, 0.99, 1]))
-##    
-#    print(nn.w[-1] - 0.5*np.array(w[-1]))
-#    a,b = nn.feedfoward([0.05, 0.1])
-#    print("Saida", a[-1])
-##    #nn.backpropagation([0.05, 0.1], [0.01, 0.99])
-#    print("Saida", nn.predict([1, 1]))
-#
+
 #    
