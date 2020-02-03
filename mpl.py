@@ -8,6 +8,10 @@ Created on Thu Jan 16 17:37:42 2020
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
+#from functools import reduce
+
 class CrossEntropyCost(object):
 
         @staticmethod
@@ -43,7 +47,7 @@ class NeuralNetwork:
         self.b = np.array([np.random.randn(i,1) for i in layers[1:]])
         self.w = np.array([np.random.randn(j,i) for i,j in zip(layers[:-1], layers[1:])])
     
-    
+        
         self.cost = cost_function
 #        mamae = [np.array([[0.15, 0.2],[0.25, 0.3]]), np.array([[0.4, 0.45],[0.5, 0.55]])]
 #        doceu = [ np.array([[0.35],[0.35]]), np.array([[0.6],[ 0.6]])]
@@ -200,37 +204,71 @@ class NeuralNetwork:
     
     
     
-    def trainModel(self, training_data, desired_response, epochs, mini_batch_size = 60000):
+    def trainModel(self, training_data, desired_response, epochs, mini_batch_size = 10, map_w = False):
         
-        j = 0
+        j = -1
         error = []
+
+        if map_w == True:
+            fig, ax = plt.subplots(self.num_layers-1)
         
         while j < epochs:
-            print("epoch: ",j+1)
+                j+=1
+                print("epoch: ",j)
             
-#            x,y = self.mini_batch2(training_data, desired_response, dataset_lenght=len(training_data), mini_batch_lenght=mini_batch_size)
-           
-            # ruim em termos de mem
+                """
+                *ruim em termos de mem e bastante custoso computacionalmente
             mini_batches = [
-                    self.mini_batch(training_data, desired_response, dataset_lenght=len(training_data), mini_batch_lenght=mini_batch_size, idx=idx) 
+                    self.mini_batch(training_data, desired_response, 
+                                    dataset_lenght=len(training_data), 
+                                    mini_batch_lenght=mini_batch_size, 
+                                    idx=idx) 
                     for idx in range(0, len(training_data), mini_batch_size)]
+            
             for mini_batch in mini_batches:
-            #for i in range(0, len(training_data), mini_batch_size):
                 
-#                dw,db,e = self.stochastic_gradient_descent(training_data[i:i+mini_batch_size], desired_response[i:i+mini_batch_size])
                 dw,db,e = self.stochastic_gradient_descent(mini_batch[0], mini_batch[1])
-#            dw,db,e = self.stochastic_gradient_descent(x, y)
+                """
 
+                """
+                * Ideia de minibatch
+                x,y = self.mini_batch2(training_data, desired_response, dataset_lenght=len(training_data), mini_batch_lenght=mini_batch_size)
+                dw,db,e = self.stochastic_gradient_descent(x, y)
+                
+                * Absurdamente lento para grandes datasets
+                dw,db,e = self.stochastic_gradient_descent(training_data[i:i+mini_batch_size], desired_response[i:i+mini_batch_size])
+
+                
+                """
+                
+                x,y = self.mini_batch2(training_data, desired_response, dataset_lenght=len(training_data), mini_batch_lenght=mini_batch_size)
+                dw,db,e = self.stochastic_gradient_descent(x, y)
+                
                 error.append(e)
             
-                dw = dw[0]        
             
                 # Atualiza os pesos e bias utilizando os gradiente
-                self.w[0] = self.w[0] - self.learning_rate*np.array(dw)
+#                    
+                self.w[0] = self.w[0] - self.learning_rate*np.array(dw[0])
+                self.w[1] = self.w[1] - self.learning_rate*np.array(dw[1])
+
                 self.b = self.b - self.learning_rate*np.array(db)
+                
+                if map_w == True:
+                    
+                    for i in range(self.num_layers-1):
+                        ax[i].plot(np.ones(len(np.ravel(self.w[i])))*j, np.ravel(self.w[i]),'.')
+                        #ax[i].plot("W")
+                             
+                        ld = lambda r, v, u: r'$\omega_{' + str(r) + ',' + str(v) +'}' + '^'+ str(u)+ '$'
+
+                        ax[i].legend(
+                                np.ravel([
+                                        [ld(r,p, i) for r in range(self.w[i].shape[0])] 
+                                        for p in range(self.w[i].shape[1])]
+                                ))
             
-            j+=1
-            
+        plt.show()
         return error
     
     
@@ -262,27 +300,25 @@ if __name__ == "__main__":
     nn = NeuralNetwork([2,4,1], 0.5)
     
 #    
-    dataset = np.array([[1,0],
+    dataset = np.array([[0,0],
                         [0,1],
-                        [0,0],
+                        [1,0],
                         [1,1]])
     
     dataset2 = np.array([[0],
                          [1],
-                         [0],
-                         [1]])
+                         [1],
+                         [0]])
             
 
-    plt.plot(nn.trainModel(dataset, dataset2, epochs=5000, mini_batch_size = 2))
-    
-    plt.legend(["1","2","4"])
 
+    err = nn.trainModel(dataset, dataset2, epochs=3000, mini_batch_size = 4, map_w=False)
+    
+    
+    plt.plot(err)
     for i,j in zip(dataset, dataset2):
+        
         print("Predicao: ", nn.predict(i))
       
 
-        
-    
-    
-
-#    
+            
